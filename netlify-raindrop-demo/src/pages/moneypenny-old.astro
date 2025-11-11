@@ -1,0 +1,279 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="MoneyPenny Trading Console">
+    <div class="py-12">
+        <div class="mb-16 max-w-4xl mx-auto text-center">
+            <h1 class="mb-4 text-5xl font-bold tracking-tight">MoneyPenny Trading Console</h1>
+            <p class="text-xl text-gray-600 leading-relaxed">
+                QriptoCENT micro-slippage trading interface. Get quotes, submit intents, and monitor execution.
+            </p>
+        </div>
+
+        <div class="max-w-6xl mx-auto space-y-8">
+            <!-- API Configuration -->
+            <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <h2 class="text-2xl font-bold mb-4">API Configuration</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">API Base URL</label>
+                        <input
+                            type="text"
+                            id="apiBase"
+                            value="http://localhost:8787"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                        <input
+                            type="text"
+                            id="apiKey"
+                            value="DEV_KEY_123"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quotes Section -->
+            <div class="bg-white rounded-lg p-6 border border-gray-200">
+                <h2 class="text-2xl font-bold mb-4">Get Quotes</h2>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Chain</label>
+                            <select
+                                id="quoteChain"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                                <option value="ethereum">Ethereum</option>
+                                <option value="polygon">Polygon</option>
+                                <option value="arbitrum">Arbitrum</option>
+                                <option value="optimism">Optimism</option>
+                                <option value="base">Base</option>
+                                <option value="solana">Solana</option>
+                                <option value="bitcoin">Bitcoin</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Size (USD)</label>
+                            <input
+                                type="number"
+                                id="quoteSize"
+                                value="1000"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                        </div>
+                        <div class="flex items-end">
+                            <button
+                                id="getQuotesBtn"
+                                class="w-full px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                                Get Quotes
+                            </button>
+                        </div>
+                    </div>
+                    <div id="quotesResult" class="mt-4 p-4 bg-gray-50 rounded-md overflow-auto max-h-96 hidden">
+                        <pre class="text-xs"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Intent Section -->
+            <div class="bg-white rounded-lg p-6 border border-gray-200">
+                <h2 class="text-2xl font-bold mb-4">Submit Intent (CANARY)</h2>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Chain</label>
+                            <select
+                                id="intentChain"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                                <option value="ethereum">Ethereum</option>
+                                <option value="polygon">Polygon</option>
+                                <option value="arbitrum">Arbitrum</option>
+                                <option value="optimism">Optimism</option>
+                                <option value="base">Base</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Venue</label>
+                            <select
+                                id="intentVenue"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                                <option value="univ3">Uniswap V3</option>
+                                <option value="curve">Curve</option>
+                                <option value="balancer">Balancer</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Side</label>
+                            <select
+                                id="intentSide"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                                <option value="BUY">BUY</option>
+                                <option value="SELL">SELL</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Size (USD)</label>
+                            <input
+                                type="number"
+                                id="intentSize"
+                                value="1000"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Min Edge (bps)</label>
+                            <input
+                                type="number"
+                                id="intentEdge"
+                                value="1.5"
+                                step="0.1"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Max Slippage (bps)</label>
+                            <input
+                                type="number"
+                                id="intentSlippage"
+                                value="2"
+                                step="0.1"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Reason</label>
+                        <input
+                            type="text"
+                            id="intentReason"
+                            placeholder="e.g., Rebalance inventory"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                    </div>
+                    <button
+                        id="submitIntentBtn"
+                        class="w-full px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                        Submit Intent
+                    </button>
+                    <div id="intentResult" class="mt-4 p-4 bg-gray-50 rounded-md overflow-auto max-h-96 hidden">
+                        <pre class="text-xs"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getApiBase() {
+            return (document.getElementById('apiBase') as HTMLInputElement).value;
+        }
+
+        function getApiKey() {
+            return (document.getElementById('apiKey') as HTMLInputElement).value;
+        }
+
+        function showResult(elementId: string, data: any) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.remove('hidden');
+                const pre = element.querySelector('pre');
+                if (pre) {
+                    pre.textContent = JSON.stringify(data, null, 2);
+                }
+            }
+        }
+
+        async function getQuotes() {
+            const chain = (document.getElementById('quoteChain') as HTMLSelectElement).value;
+            const size = (document.getElementById('quoteSize') as HTMLInputElement).value;
+
+            try {
+                const response = await fetch(
+                    `${getApiBase()}/quotes?chain=${chain}&size_usd=${size}`,
+                    {
+                        headers: {
+                            'X-Api-Key': getApiKey()
+                        }
+                    }
+                );
+                const data = await response.json();
+                showResult('quotesResult', data);
+            } catch (error) {
+                showResult('quotesResult', { error: error.message });
+            }
+        }
+
+        async function submitIntent() {
+            const chain = (document.getElementById('intentChain') as HTMLSelectElement).value;
+            const venue = (document.getElementById('intentVenue') as HTMLSelectElement).value;
+            const side = (document.getElementById('intentSide') as HTMLSelectElement).value;
+            const size = parseFloat((document.getElementById('intentSize') as HTMLInputElement).value);
+            const minEdge = parseFloat((document.getElementById('intentEdge') as HTMLInputElement).value);
+            const maxSlippage = parseFloat((document.getElementById('intentSlippage') as HTMLInputElement).value);
+            const reason = (document.getElementById('intentReason') as HTMLInputElement).value;
+
+            const intent = {
+                intent_id: crypto.randomUUID(),
+                tenant_id: 'qripto-dev',
+                created_at: new Date().toISOString(),
+                actor: {
+                    type: 'user',
+                    name: 'MoneyPenny'
+                },
+                kind: 'PLACE_ORDER',
+                details: {
+                    chain,
+                    venue,
+                    symbol: 'QCT/USDC',
+                    side,
+                    size: {
+                        notional: size,
+                        currency: 'USDc'
+                    },
+                    limits: {
+                        max_slippage_bps: maxSlippage,
+                        min_edge_bps: minEdge,
+                        deadline_s: 60
+                    },
+                    reason: reason || 'Demo order from MoneyPenny UI'
+                },
+                policy: {
+                    risk_profile: 'CANARY',
+                    requires_human_confirm: false,
+                    kill_switch_ok: true
+                },
+                meta: {
+                    source: 'MoneyPenny'
+                }
+            };
+
+            try {
+                const response = await fetch(`${getApiBase()}/propose_intent`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Api-Key': getApiKey()
+                    },
+                    body: JSON.stringify(intent)
+                });
+                const data = await response.json();
+                showResult('intentResult', data);
+            } catch (error) {
+                showResult('intentResult', { error: error.message });
+            }
+        }
+
+        document.getElementById('getQuotesBtn')?.addEventListener('click', getQuotes);
+        document.getElementById('submitIntentBtn')?.addEventListener('click', submitIntent);
+    </script>
+</Layout>

@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { UIStyles } from "../components/ui/ui";
+import BankingWizardWrapper from "../components/banking/BankingWizardWrapper";
+---
+
+<Layout title="Banking Wizard - Aigent MoneyPenny">
+  <BankingWizardWrapper client:only="react" />
+  <UIStyles client:only="react" />
+</Layout>

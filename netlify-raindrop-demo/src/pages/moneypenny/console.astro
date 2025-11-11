@@ -1,0 +1,756 @@
+---
+import Footer from "../../components/Footer.astro";
+import { UIStyles } from "../../components/ui/ui";
+import { PersonaProvider } from "../../lib/personaStore";
+import MoneyPennyDrawer from "../../components/moneypenny/MoneyPennyDrawer";
+import PersonaDrawer from "../../components/identity/PersonaDrawer";
+
+const BASE = import.meta.env.PUBLIC_MONEYPENNY_BASE || "http://localhost:8787";
+
+const navItems = [
+    { linkText: 'Home', href: '/' },
+    { linkText: 'HFT Console', href: '/moneypenny/console' },
+    { linkText: 'Banking Wizard', href: '/banking' }
+];
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aigent MoneyPenny Q¢ Trading Console</title>
+    <script src="https://cdn.tailwindcss.com" is:inline></script>
+    <style>
+      .chain-icon {
+        font-size: 1.1em;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-900 text-slate-200">
+    <!-- Custom Header without Netlify branding -->
+    <nav class="flex flex-wrap items-center gap-4 pt-6 pb-4 px-6 max-w-7xl mx-auto">
+        <a href="/" class="text-xl font-bold text-emerald-400">Aigent MoneyPenny</a>
+        <ul class="flex flex-wrap gap-x-4 gap-y-1">
+            {navItems.map((item) => (
+                <li>
+                    <a href={item.href} class="inline-block px-1.5 py-1 sm:px-3 sm:py-2 text-slate-300 hover:text-white transition-colors">
+                        {item.linkText}
+                    </a>
+                </li>
+            ))}
+        </ul>
+    </nav>
+    <main class="max-w-7xl mx-auto p-6 space-y-6">
+      <div class="space-y-4">
+        <div>
+          <h1 class="text-3xl font-bold">Q¢ HFT Console</h1>
+          <p class="text-sm text-gray-400 mt-1">QriptoCENT (Q¢) micro-slippage trading agent. Get quotes, submit intents, and monitor execution.</p>
+        </div>
+
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="chain-ethereum" class="chain-chip px-3 py-1 rounded text-xs border border-blue-400 bg-blue-500 bg-opacity-20 flex items-center gap-1" data-chain="ethereum"><span class="chain-icon">⟠</span> ethereum</button>
+            <button id="chain-arbitrum" class="chain-chip px-3 py-1 rounded text-xs border border-cyan-400 bg-cyan-500 bg-opacity-20 flex items-center gap-1" data-chain="arbitrum"><span class="chain-icon">◆</span> arbitrum</button>
+            <button id="chain-base" class="chain-chip px-3 py-1 rounded text-xs border border-blue-400 bg-blue-500 bg-opacity-20 flex items-center gap-1" data-chain="base"><span class="chain-icon">🔵</span> base</button>
+            <button id="chain-polygon" class="chain-chip px-3 py-1 rounded text-xs border border-purple-400 bg-purple-500 bg-opacity-20 flex items-center gap-1" data-chain="polygon"><span class="chain-icon">⬢</span> polygon</button>
+            <button id="chain-optimism" class="chain-chip px-3 py-1 rounded text-xs border border-red-400 bg-red-500 bg-opacity-20 flex items-center gap-1" data-chain="optimism"><span class="chain-icon">🔴</span> optimism</button>
+            <button id="chain-solana" class="chain-chip px-3 py-1 rounded text-xs border border-emerald-400 bg-emerald-500 bg-opacity-20 flex items-center gap-1" data-chain="solana"><span class="chain-icon">◎</span> solana</button>
+            <button id="chain-bitcoin" class="chain-chip px-3 py-1 rounded text-xs border border-orange-400 bg-orange-500 bg-opacity-20 flex items-center gap-1" data-chain="bitcoin"><span class="chain-icon">₿</span> bitcoin</button>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="personaBtn" class="text-xs px-3 py-1.5 rounded bg-gray-700 text-gray-200 font-medium hover:bg-gray-600 transition-colors cursor-pointer border border-gray-600">
+              @Qripto Sign in
+            </button>
+            <button id="openChatBtn" class="text-xs px-3 py-1.5 rounded bg-blue-600 text-white font-medium hover:bg-blue-500 transition-colors cursor-pointer border border-blue-500">
+              💬 MoneyPenny Chat
+            </button>
+            <button id="modeToggle" class="text-xs px-3 py-1.5 rounded bg-purple-600 text-white font-medium hover:bg-purple-500 transition-colors cursor-pointer border border-purple-500">
+              Mode: <span id="modeText">SIMULATION</span>
+            </button>
+            <div id="connectionStatus" class="text-xs px-3 py-1.5 rounded bg-gray-700 text-gray-300 border border-gray-600">
+              ⚫ Disconnected
+            </div>
+          </div>
+        </div>
+
+        <div id="liveWarning" class="hidden bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg text-sm">
+          <strong>Live Mode Requirements:</strong> You must run in simulation mode for 7 days before switching to live trading. Current simulation days: <span id="simDays" class="font-bold">0</span>/7
+        </div>
+
+        <div id="appliedConfig" class="hidden bg-emerald-100 border border-emerald-400 text-emerald-800 px-4 py-3 rounded-lg text-sm relative">
+          <strong>✓ Profile Applied:</strong> Inventory Band = <span id="configInventory" class="font-bold"></span>, Min Edge = <span id="configMinEdge" class="font-bold"></span> bps
+          <span class="text-xs text-emerald-600 ml-2">(Applied from Profile Wizard)</span>
+          <button id="closeConfigBtn" class="absolute top-2 right-2 text-emerald-600 hover:text-emerald-800 font-bold text-lg leading-none" title="Close">×</button>
+        </div>
+      </div>
+
+      <!-- Interactive Trading Sections -->
+      <section class="grid md:grid-cols-2 gap-4">
+        <!-- Get Quotes -->
+        <div class="bg-slate-800 rounded-2xl shadow-lg p-4 border border-slate-700">
+          <h2 class="text-lg font-bold mb-3">Get Quotes</h2>
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Chain</label>
+                <select id="quoteChain" class="w-full px-3 py-2 rounded-md bg-slate-700 border border-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="ethereum">Ethereum</option>
+                  <option value="arbitrum">Arbitrum</option>
+                  <option value="base">Base</option>
+                  <option value="polygon">Polygon</option>
+                  <option value="optimism">Optimism</option>
+                  <option value="solana">Solana</option>
+                  <option value="bitcoin">Bitcoin</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Size (USD)</label>
+                <input type="number" id="quoteSize" value="1000" class="w-full px-3 py-2 rounded-md bg-slate-700 border border-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+            </div>
+            <button id="getQuotesBtn" class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium">
+              Get Quotes
+            </button>
+            <div id="quotesResult" class="hidden mt-3 p-3 bg-slate-700 rounded-md overflow-auto max-h-64">
+              <div id="quotesResultContent" class="text-xs text-gray-300"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Intent -->
+        <div class="bg-slate-800 rounded-2xl shadow-lg p-4 border border-slate-700">
+          <h2 class="text-lg font-bold mb-3">Submit Intent (CANARY)</h2>
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Chain</label>
+                <select id="intentChain" class="w-full px-2 py-1.5 rounded-md bg-slate-700 border border-slate-600 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <option value="ethereum">Ethereum</option>
+                  <option value="arbitrum">Arbitrum</option>
+                  <option value="base">Base</option>
+                  <option value="polygon">Polygon</option>
+                  <option value="optimism">Optimism</option>
+                  <option value="solana">Solana</option>
+                  <option value="bitcoin">Bitcoin</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Side</label>
+                <select id="intentSide" class="w-full px-2 py-1.5 rounded-md bg-slate-700 border border-slate-600 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <option value="BUY">BUY</option>
+                  <option value="SELL">SELL</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Size (USD)</label>
+                <input type="number" id="intentSize" value="1000" class="w-full px-2 py-1.5 rounded-md bg-slate-700 border border-slate-600 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Min Edge (bps)</label>
+                <input type="number" id="intentEdge" value="1.5" step="0.1" class="w-full px-2 py-1.5 rounded-md bg-slate-700 border border-slate-600 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+            </div>
+            <button id="submitIntentBtn" class="w-full px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors font-medium text-sm">
+              Submit Intent
+            </button>
+            <div id="intentResult" class="hidden mt-3 p-3 bg-slate-700 rounded-md overflow-auto max-h-48">
+              <div id="intentResultContent" class="text-xs text-gray-300"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Monitoring Dashboard -->
+      <section class="grid lg:grid-cols-3 gap-4">
+        <div class="bg-white rounded-2xl shadow p-4">
+          <div class="text-sm font-medium mb-3 text-gray-700">Edge Gauge</div>
+          <div class="h-3 rounded bg-gray-200 relative">
+            <div id="floorBar" class="absolute left-0 top-0 h-3 bg-gray-400 rounded-l" style="width: 10%"></div>
+            <div id="minEdgeBar" class="absolute left-0 top-0 h-3 bg-green-300 opacity-60" style="width: 20%"></div>
+            <div id="edgeNeedle" class="absolute -mt-1 w-0 h-0 transition-all duration-300" style="left: 15%; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 8px solid rgb(37, 99, 235);"></div>
+          </div>
+          <div class="mt-3 text-xs text-gray-600 grid grid-cols-3 gap-1">
+            <div>Floor: <b id="floorVal">0.5</b></div>
+            <div>Min: <b id="minEdgeVal">1.0</b></div>
+            <div>Now: <b id="edgeVal" class="text-blue-600">0.0</b></div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow p-4">
+          <div class="flex justify-between items-start mb-2">
+            <div class="text-sm font-medium text-gray-700">Q¢ Accumulated</div>
+            <button id="resetBtn" class="text-xs px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200 transition-colors" title="Reset accumulation">Reset</button>
+          </div>
+          <div class="text-3xl font-bold text-emerald-600" id="qcentEarned">0</div>
+          <div class="text-xs text-gray-500 mt-1">From realized capture during this session</div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow p-4">
+          <div class="text-sm font-medium mb-2 text-gray-700">Inventory Band</div>
+          <div class="h-3 bg-gray-200 rounded relative">
+            <div id="inventoryBar" class="h-3 bg-emerald-400 rounded transition-all duration-500" style="width: 40%"></div>
+          </div>
+          <div class="text-xs text-gray-600 mt-2">
+            Working Q¢ within target band
+          </div>
+        </div>
+      </section>
+
+      <section class="grid md:grid-cols-3 gap-4">
+        <div class="bg-white rounded-2xl shadow p-3">
+          <div class="text-sm font-medium mb-2 text-gray-700">Micro Fills</div>
+          <div id="fillsList" class="space-y-1 h-64 overflow-y-auto text-xs">
+            <div class="text-center text-gray-400 py-8">Waiting for fills...</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow p-3">
+          <div class="text-sm font-medium mb-2 text-gray-700">Capture (bps)</div>
+          <svg id="captureSvg" width="100%" height="160" viewBox="0 0 320 160" class="rounded">
+            <defs>
+              <linearGradient id="captureGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color: rgb(16, 185, 129); stop-opacity: 0.3" />
+                <stop offset="100%" style="stop-color: rgb(16, 185, 129); stop-opacity: 0" />
+              </linearGradient>
+            </defs>
+            <polyline id="captureLine" fill="none" stroke="rgb(16, 185, 129)" stroke-width="2" points="" />
+          </svg>
+          <div class="text-xs text-gray-600 mt-1">
+            Last: <b id="lastCapture" class="text-emerald-600">0</b> bps ·
+            Avg: <b id="avgCapture">0</b> bps
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow p-3">
+          <div class="text-sm font-medium mb-2 text-gray-700">Recent Quotes</div>
+          <div id="quotesList" class="space-y-1 h-64 overflow-y-auto text-xs">
+            <div class="text-center text-gray-400 py-8">Connecting...</div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <Footer />
+
+    <!-- MoneyPenny Components -->
+    <UIStyles client:only="react" />
+    <PersonaProvider client:only="react">
+      <PersonaDrawer client:load />
+      <MoneyPennyDrawer client:load tenantId="qripto" personaId="" />
+    </PersonaProvider>
+
+    <script define:vars={{ BASE }}>
+      // Persona management
+      let personaState = { tenantId: "qripto", personaDid: "", handle: "" };
+
+      function loadPersona() {
+        try {
+          const raw = localStorage.getItem("qripto.persona");
+          if (raw) {
+            personaState = JSON.parse(raw);
+            updatePersonaUI();
+          }
+        } catch (e) {}
+      }
+
+      function updatePersonaUI() {
+        const btn = document.getElementById("personaBtn");
+        if (btn) {
+          if (personaState.personaDid) {
+            btn.textContent = personaState.handle;
+            btn.className = "text-xs px-3 py-1.5 rounded bg-emerald-600 text-white font-medium hover:bg-emerald-500 transition-colors cursor-pointer border border-emerald-500";
+          } else {
+            btn.textContent = "@Qripto Sign in";
+            btn.className = "text-xs px-3 py-1.5 rounded bg-gray-700 text-gray-200 font-medium hover:bg-gray-600 transition-colors cursor-pointer border border-gray-600";
+          }
+        }
+      }
+
+      // Listen for persona changes
+      window.addEventListener("storage", (e) => {
+        if (e.key === "qripto.persona") {
+          loadPersona();
+          restartSSE();
+        }
+      });
+
+      // Load persona on start
+      loadPersona();
+
+      // Load persisted state from localStorage
+      const STORAGE_KEY = 'moneypenny_state';
+      function loadState() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            return JSON.parse(saved);
+          }
+        } catch (e) {
+          console.error('Failed to load state:', e);
+        }
+        return {
+          fills: [],
+          captures: [],
+          qcentEarned: 0,
+          simulationDays: 0,
+          lastUpdated: null
+        };
+      }
+
+      function saveState() {
+        try {
+          const state = {
+            fills: fills.slice(0, 30),
+            captures: captures.slice(0, 120),
+            qcentEarned,
+            simulationDays,
+            lastUpdated: new Date().toISOString()
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {
+          console.error('Failed to save state:', e);
+        }
+      }
+
+      // Load applied config from Profile Wizard
+      function loadAppliedConfig() {
+        try {
+          const saved = localStorage.getItem('moneypenny_applied_config');
+          if (saved) {
+            return JSON.parse(saved);
+          }
+        } catch (e) {
+          console.error('Failed to load config:', e);
+        }
+        return null;
+      }
+
+      // Initialize from persisted state
+      const savedState = loadState();
+      const appliedConfig = loadAppliedConfig();
+      let fills = savedState.fills || [];
+      let captures = savedState.captures || [];
+      let quotes = [];
+      let selectedChains = ['ethereum', 'arbitrum', 'base', 'polygon', 'optimism', 'solana', 'bitcoin'];
+      let qcentEarned = savedState.qcentEarned || 0;
+      let currentReader = null;
+      let isLiveMode = false;
+      let simulationDays = savedState.simulationDays || 0;
+
+      const connectionStatus = document.getElementById("connectionStatus");
+      const edgeVal = document.getElementById("edgeVal");
+      const edgeNeedle = document.getElementById("edgeNeedle");
+      const fillsList = document.getElementById("fillsList");
+      const quotesList = document.getElementById("quotesList");
+      const captureLine = document.getElementById("captureLine");
+      const lastCapture = document.getElementById("lastCapture");
+      const avgCapture = document.getElementById("avgCapture");
+      const modeToggle = document.getElementById("modeToggle");
+      const modeText = document.getElementById("modeText");
+      const liveWarning = document.getElementById("liveWarning");
+      const simDays = document.getElementById("simDays");
+
+      // Display applied config if available
+      if (appliedConfig) {
+        const configBanner = document.getElementById('appliedConfig');
+        document.getElementById('configInventory').textContent = appliedConfig.inventoryBand?.toFixed(2) || '0';
+        document.getElementById('configMinEdge').textContent = appliedConfig.minEdge?.toFixed(1) || '0';
+        configBanner.classList.remove('hidden');
+
+        // Auto-populate intent form with recommended settings
+        document.getElementById('intentEdge').value = appliedConfig.minEdge?.toFixed(1) || '1.5';
+
+        // Handle close button
+        document.getElementById('closeConfigBtn').addEventListener('click', () => {
+          configBanner.classList.add('hidden');
+        });
+      }
+
+      // Reset button
+      document.getElementById('resetBtn').addEventListener('click', () => {
+        if (confirm('Reset all accumulated Q¢, fills, and capture data? This cannot be undone.')) {
+          fills = [];
+          captures = [];
+          qcentEarned = 0;
+          simulationDays = 0;
+          document.getElementById('qcentEarned').textContent = '0';
+          renderFills();
+          renderCapture();
+          saveState();
+        }
+      });
+
+      // Mode toggle
+      modeToggle.addEventListener('click', () => {
+        if (!isLiveMode && simulationDays < 7) {
+          liveWarning.classList.remove('hidden');
+          simDays.textContent = simulationDays.toString();
+          return;
+        }
+        isLiveMode = !isLiveMode;
+        modeText.textContent = isLiveMode ? 'LIVE' : 'SIMULATION';
+        modeToggle.className = isLiveMode
+          ? 'text-xs px-3 py-1.5 rounded bg-emerald-600 text-white font-medium hover:bg-emerald-500 transition-colors cursor-pointer border border-emerald-500'
+          : 'text-xs px-3 py-1.5 rounded bg-purple-600 text-white font-medium hover:bg-purple-500 transition-colors cursor-pointer border border-purple-500';
+        liveWarning.classList.add('hidden');
+        restartSSE();
+      });
+
+      // Chain selection
+      document.querySelectorAll('.chain-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const chain = btn.dataset.chain;
+          if (selectedChains.includes(chain)) {
+            if (selectedChains.length > 1) {
+              selectedChains = selectedChains.filter(c => c !== chain);
+              btn.classList.remove('bg-opacity-20');
+              btn.classList.add('bg-opacity-5', 'opacity-50');
+            }
+          } else {
+            selectedChains.push(chain);
+            btn.classList.remove('bg-opacity-5', 'opacity-50');
+            btn.classList.add('bg-opacity-20');
+          }
+          restartSSE();
+        });
+      });
+
+      // Get Quotes - Toggle on click
+      let quotesExpanded = false;
+      document.getElementById('getQuotesBtn').addEventListener('click', async () => {
+        const quotesResult = document.getElementById('quotesResult');
+
+        // If already expanded, collapse
+        if (quotesExpanded) {
+          quotesResult.classList.add('hidden');
+          quotesExpanded = false;
+          return;
+        }
+
+        const chain = document.getElementById('quoteChain').value;
+        const size = document.getElementById('quoteSize').value;
+
+        try {
+          const response = await fetch(`${BASE}/quotes?chain=${chain}&size_usd=${size}`, {
+            headers: { 'X-Api-Key': 'DEV_KEY_123' }
+          });
+          const data = await response.json();
+
+          // Format display
+          const content = document.getElementById('quotesResultContent');
+          if (data.ok && data.quotes) {
+            content.innerHTML = `
+              <div class="space-y-2">
+                <div class="font-bold text-emerald-400">✓ Quotes Retrieved</div>
+                <div class="grid grid-cols-2 gap-2">
+                  ${data.quotes.map(q => `
+                    <div class="p-2 bg-slate-800 rounded border border-slate-600">
+                      <div class="font-medium text-gray-200">${q.venue || 'Unknown'}</div>
+                      <div class="text-gray-400">Price: <span class="text-white">$${q.price?.toFixed(6) || 'N/A'}</span></div>
+                      <div class="text-gray-400">Edge: <span class="${(q.edge_bps || 0) > 0 ? 'text-emerald-400' : 'text-rose-400'}">${q.edge_bps?.toFixed(2) || '0.00'} bps</span></div>
+                      <div class="text-gray-400">Size: <span class="text-white">${q.size?.toFixed(2) || size} Q¢</span></div>
+                    </div>
+                  `).join('')}
+                </div>
+                <div class="text-gray-500 text-xs">Chain: ${data.chain || chain} • ${data.quotes.length} quotes</div>
+              </div>
+            `;
+          } else {
+            content.innerHTML = `<div class="text-rose-400">⚠ ${data.message || 'No quotes available'}</div>`;
+          }
+
+          quotesResult.classList.remove('hidden');
+          quotesExpanded = true;
+        } catch (error) {
+          const content = document.getElementById('quotesResultContent');
+          content.innerHTML = `<div class="text-rose-400">⚠ Error: ${error.message}</div>`;
+          quotesResult.classList.remove('hidden');
+          quotesExpanded = true;
+        }
+      });
+
+      // Submit Intent - Toggle on click
+      let intentExpanded = false;
+      document.getElementById('submitIntentBtn').addEventListener('click', async () => {
+        const intentResult = document.getElementById('intentResult');
+
+        // If already expanded, collapse
+        if (intentExpanded) {
+          intentResult.classList.add('hidden');
+          intentExpanded = false;
+          return;
+        }
+
+        const chain = document.getElementById('intentChain').value;
+        const side = document.getElementById('intentSide').value;
+        const size = parseFloat(document.getElementById('intentSize').value);
+        const minEdge = parseFloat(document.getElementById('intentEdge').value);
+
+        const intent = {
+          intent_id: crypto.randomUUID(),
+          tenant_id: 'qripto-dev',
+          created_at: new Date().toISOString(),
+          actor: { type: 'user', name: 'MoneyPenny' },
+          kind: 'PLACE_ORDER',
+          details: {
+            chain,
+            venue: 'univ3',
+            symbol: 'QCT/USDC',
+            side,
+            size: { notional: size, currency: 'USDc' },
+            limits: { max_slippage_bps: 2.0, min_edge_bps: minEdge, deadline_s: 60 },
+            reason: 'Demo order from MoneyPenny Console'
+          },
+          policy: { risk_profile: 'CANARY', requires_human_confirm: false, kill_switch_ok: true },
+          meta: { source: 'MoneyPenny' }
+        };
+
+        try {
+          const response = await fetch(`${BASE}/propose_intent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Api-Key': 'DEV_KEY_123' },
+            body: JSON.stringify(intent)
+          });
+          const data = await response.json();
+
+          // Format display
+          const content = document.getElementById('intentResultContent');
+          if (data.ok) {
+            content.innerHTML = `
+              <div class="space-y-2">
+                <div class="font-bold text-emerald-400">✓ Intent ${data.status || 'Submitted'}</div>
+                <div class="p-2 bg-slate-800 rounded border border-slate-600">
+                  <div class="grid grid-cols-2 gap-1 text-gray-400">
+                    <div>Intent ID:</div><div class="text-white font-mono text-xs">${data.intent_id?.slice(0, 8) || 'N/A'}...</div>
+                    <div>Chain:</div><div class="text-white">${chain}</div>
+                    <div>Side:</div><div class="text-white font-bold ${side === 'BUY' ? 'text-emerald-400' : 'text-rose-400'}">${side}</div>
+                    <div>Size:</div><div class="text-white">${size} USD</div>
+                    <div>Min Edge:</div><div class="text-white">${minEdge} bps</div>
+                    ${data.estimated_fill ? `<div>Est. Fill:</div><div class="text-emerald-400">${data.estimated_fill}</div>` : ''}
+                  </div>
+                </div>
+                <div class="text-gray-500 text-xs">${data.message || 'Intent queued for execution'}</div>
+              </div>
+            `;
+          } else {
+            content.innerHTML = `<div class="text-rose-400">⚠ ${data.error || data.message || 'Failed to submit intent'}</div>`;
+          }
+
+          intentResult.classList.remove('hidden');
+          intentExpanded = true;
+        } catch (error) {
+          const content = document.getElementById('intentResultContent');
+          content.innerHTML = `<div class="text-rose-400">⚠ Error: ${error.message}</div>`;
+          intentResult.classList.remove('hidden');
+          intentExpanded = true;
+        }
+      });
+
+      function restartSSE() {
+        if (currentReader) {
+          currentReader.cancel();
+          currentReader = null;
+        }
+        startSSE();
+      }
+
+      function startSSE() {
+        const params = new URLSearchParams({
+          k: 'DEV_KEY_123',
+          chains: selectedChains.join(',')
+        });
+        if (personaState.tenantId) params.set('tenant_id', personaState.tenantId);
+        if (personaState.personaDid) params.set('persona_id', personaState.personaDid);
+        const url = `${BASE}/sim/stream?${params.toString()}`;
+
+        fetch(url)
+          .then((response) => {
+            if (!response.ok || !response.body) {
+              throw new Error("Failed to connect to stream");
+            }
+
+            connectionStatus.textContent = "🟢 Connected";
+            connectionStatus.className = "text-xs px-3 py-1.5 rounded bg-emerald-600 text-white font-medium border border-emerald-500";
+
+            currentReader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = "";
+
+            function read() {
+              currentReader.read().then(({ done, value }) => {
+                if (done) {
+                  connectionStatus.textContent = "⚫ Disconnected";
+                  connectionStatus.className = "text-xs px-3 py-1.5 rounded bg-gray-700 text-gray-300 border border-gray-600";
+                  currentReader = null;
+                  return;
+                }
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split("\n");
+                buffer = lines.pop() || "";
+
+                for (const line of lines) {
+                  if (line.startsWith("data: ")) {
+                    try {
+                      const msg = JSON.parse(line.slice(6));
+                      handleMessage(msg);
+                    } catch (e) {
+                      console.error("Parse error:", e);
+                    }
+                  }
+                }
+
+                read();
+              }).catch(() => {
+                currentReader = null;
+              });
+            }
+
+            read();
+          })
+          .catch((e) => {
+            console.error("SSE error:", e);
+            connectionStatus.textContent = "🔴 Error";
+            connectionStatus.className = "text-xs px-3 py-1.5 rounded bg-red-600 text-white font-medium border border-red-500";
+          });
+      }
+
+      function handleMessage(msg) {
+        if (msg.status === "QUOTE") {
+          const edge = msg.edge_bps || 0;
+          edgeVal.textContent = edge.toFixed(2);
+          const pct = Math.min(100, (edge / 5) * 100);
+          edgeNeedle.style.left = `${pct}%`;
+
+          quotes.unshift(msg);
+          quotes = quotes.slice(0, 20);
+          renderQuotes();
+        }
+
+        if (msg.status === "FILL") {
+          fills.unshift(msg);
+          fills = fills.slice(0, 30);
+          renderFills();
+          saveState();
+        }
+
+        if (msg.status === "P&L") {
+          const cap = msg.capture_bps || 0;
+          captures.push(cap);
+          if (captures.length > 120) captures.shift();
+
+          // Calculate Q¢ earned
+          if (msg.capture_bps && msg.notional_usd) {
+            const qc = (msg.capture_bps / 10000) * msg.notional_usd / (msg.peg_usd || 0.01);
+            qcentEarned += qc;
+            document.getElementById('qcentEarned').textContent = qcentEarned.toFixed(2);
+          }
+
+          renderCapture();
+          saveState();
+        }
+      }
+
+      function renderFills() {
+        if (fills.length === 0) {
+          fillsList.innerHTML = '<div class="text-center text-gray-400 py-8">Waiting for fills...</div>';
+          return;
+        }
+
+        const chainIcons = {
+          ethereum: '⟠',
+          arbitrum: '◆',
+          base: '🔵',
+          polygon: '⬢',
+          optimism: '🔴',
+          solana: '◎',
+          bitcoin: '₿'
+        };
+
+        fillsList.innerHTML = fills
+          .map((f) => `
+          <div class="flex items-center justify-between px-2 py-1.5 rounded bg-gray-50 hover:bg-gray-100">
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium ${f.side === "BUY" ? "bg-emerald-200 text-emerald-800" : "bg-rose-200 text-rose-800"}">${f.side}</span>
+            ${f.chain ? `<span title="${f.chain}" class="text-gray-700">${chainIcons[f.chain] || '⛓️'}</span>` : ''}
+            <span class="font-mono text-gray-800">${f.qty_qct.toFixed(2)} Q¢</span>
+            <span class="font-mono text-gray-700">$${f.price_usdc.toFixed(5)}</span>
+            <span class="text-gray-600">${new Date(f.ts).toLocaleTimeString()}</span>
+          </div>
+        `)
+          .join("");
+      }
+
+      function renderQuotes() {
+        if (quotes.length === 0) {
+          quotesList.innerHTML = '<div class="text-center text-gray-400 py-8">Connecting...</div>';
+          return;
+        }
+
+        const chainIcons = {
+          ethereum: '⟠',
+          arbitrum: '◆',
+          base: '🔵',
+          polygon: '⬢',
+          optimism: '🔴',
+          solana: '◎',
+          bitcoin: '₿'
+        };
+
+        quotesList.innerHTML = quotes
+          .map((q) => `
+          <div class="flex items-center justify-between px-2 py-1 rounded bg-gray-50">
+            <span class="text-xs flex items-center gap-1">
+              ${q.chain ? `<span title="${q.chain}" class="text-gray-700">${chainIcons[q.chain] || '⛓️'}</span>` : ''}
+              <span class="capitalize text-gray-800">${q.chain || "?"}</span>
+            </span>
+            <span class="text-xs font-medium ${(q.edge_bps || 0) > 0 ? 'text-emerald-600' : 'text-rose-600'}">${q.edge_bps?.toFixed(2) || "0"} bps</span>
+            <span class="text-xs text-gray-600">${new Date(q.ts).toLocaleTimeString()}</span>
+          </div>
+        `)
+          .join("");
+      }
+
+      function renderCapture() {
+        if (captures.length === 0) return;
+
+        const width = 320;
+        const height = 160;
+        const max = Math.max(1, ...captures, 5);
+
+        const points = captures
+          .map((v, i) => {
+            const x = (i / Math.max(1, captures.length - 1)) * width;
+            const y = height - (v / max) * height;
+            return `${x},${y}`;
+          })
+          .join(" ");
+
+        captureLine.setAttribute("points", points);
+
+        const last = captures[captures.length - 1] || 0;
+        const avg = captures.reduce((a, b) => a + b, 0) / captures.length;
+
+        lastCapture.textContent = last.toFixed(2);
+        avgCapture.textContent = avg.toFixed(2);
+      }
+
+      // Initialize display with persisted values after functions are defined
+      document.getElementById('qcentEarned').textContent = qcentEarned.toFixed(2);
+      if (fills.length > 0) renderFills();
+      if (captures.length > 0) renderCapture();
+
+      // Persona button
+      document.getElementById('personaBtn').addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('persona:open'));
+      });
+
+      // MoneyPenny Chat Drawer
+      document.getElementById('openChatBtn').addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('moneypenny:open'));
+      });
+
+      // Start SSE on page load
+      setTimeout(startSSE, 300);
+    </script>
+  </body>
+</html>

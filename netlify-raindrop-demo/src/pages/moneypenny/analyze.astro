@@ -1,0 +1,243 @@
+---
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MoneyPenny · Analyze</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-100 text-slate-900">
+    <Header />
+    <main class="max-w-5xl mx-auto p-6 space-y-6">
+      <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-bold">MoneyPenny · Analyze 6 Months</h1>
+        <span class="text-xs px-3 py-1 rounded-full bg-purple-100 text-purple-700">
+          Banking Profile Wizard
+        </span>
+      </div>
+
+      <section class="bg-white rounded-2xl shadow p-6 space-y-4">
+        <div class="text-sm text-gray-600">
+          Upload 6+ monthly statements (PDF/CSV). We'll compute non-PII features
+          and propose a Q¢ trading envelope.
+        </div>
+        <div>
+          <input
+            type="file"
+            multiple
+            accept=".pdf,.csv,.txt"
+            id="fileInput"
+            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+          />
+        </div>
+        <button
+          id="uploadBtn"
+          class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50"
+          disabled
+        >
+          Analyze Statements
+        </button>
+        <div id="uploadStatus" class="text-sm"></div>
+      </section>
+
+      <div id="resultsSection" class="hidden space-y-6">
+        <section class="grid md:grid-cols-3 gap-4">
+          <div class="bg-white rounded-2xl shadow p-4">
+            <div class="text-sm font-medium mb-2 text-gray-700">
+              Monthly Averages
+            </div>
+            <div class="space-y-1 text-xs">
+              <div>
+                Avg Surplus (daily): <b id="avgSurplus">-</b>
+              </div>
+              <div>
+                Volatility (daily): <b id="volatility">-</b>
+              </div>
+              <div>
+                Closing Balance (last): <b id="closingBalance">-</b>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow p-4">
+            <div class="text-sm font-medium mb-2 text-gray-700">
+              Proposed Envelope
+            </div>
+            <div class="space-y-1 text-xs">
+              <div>
+                Inventory Band: <b id="inventoryBand">-</b>×
+              </div>
+              <div>
+                Daily Loss Limit: <b id="lossLimit">-</b> bps
+              </div>
+              <div>
+                Max Notional / Day: <b id="maxNotional">-</b>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow p-4">
+            <div class="text-sm font-medium mb-2 text-gray-700">Edge Floor</div>
+            <div class="h-3 rounded bg-gray-200 relative">
+              <div
+                id="floorBar"
+                class="absolute left-0 top-0 h-3 bg-gray-400 rounded-l"
+                style="width: 20%"
+              ></div>
+              <div
+                id="edgeBar"
+                class="absolute left-0 top-0 h-3 bg-green-300 opacity-60"
+                style="width: 30%"
+              ></div>
+            </div>
+            <div class="mt-2 text-xs text-gray-600">
+              Min Edge: <b id="minEdge">1.0</b> bps
+            </div>
+          </div>
+        </section>
+
+        <section class="flex justify-end">
+          <button
+            id="applyBtn"
+            class="px-6 py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors shadow-lg"
+          >
+            Apply to Console →
+          </button>
+        </section>
+      </div>
+    </main>
+    <Footer />
+
+    <script>
+      const BASE = "http://localhost:8787";
+      const BANK = "http://localhost:8788";
+      const tenantId = "qripto-dev";
+
+      let extractedData: any = null;
+
+      const fileInput = document.getElementById("fileInput") as HTMLInputElement;
+      const uploadBtn = document.getElementById("uploadBtn") as HTMLButtonElement;
+      const uploadStatus = document.getElementById("uploadStatus") as HTMLDivElement;
+      const resultsSection = document.getElementById("resultsSection") as HTMLDivElement;
+      const applyBtn = document.getElementById("applyBtn") as HTMLButtonElement;
+
+      fileInput?.addEventListener("change", () => {
+        uploadBtn.disabled = !fileInput.files || fileInput.files.length === 0;
+      });
+
+      uploadBtn?.addEventListener("click", async () => {
+        if (!fileInput.files || fileInput.files.length === 0) return;
+
+        uploadBtn.disabled = true;
+        uploadStatus.textContent = "Analyzing statements...";
+        uploadStatus.className = "text-sm text-blue-600";
+
+        try {
+          const fd = new FormData();
+          fd.append("tenant_id", tenantId);
+          Array.from(fileInput.files).forEach((f) => fd.append("files", f));
+
+          const r = await fetch(`${BANK}/bank/bulk_extract`, {
+            method: "POST",
+            body: fd,
+          });
+
+          if (!r.ok) throw new Error("Failed to extract statements");
+
+          const bulkData = await r.json();
+
+          // Aggregate
+          const r2 = await fetch(`${BANK}/profile/aggregate`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              tenant_id: tenantId,
+              months: bulkData.months.map((m: any) => ({
+                month: m.month,
+                features: m.features,
+                proposed_overrides: m.proposed_overrides,
+              })),
+            }),
+          });
+
+          if (!r2.ok) throw new Error("Failed to aggregate");
+
+          const aggData = await r2.json();
+          extractedData = aggData;
+
+          // Display results
+          const agg = aggData.aggregate;
+          document.getElementById("avgSurplus")!.textContent =
+            agg.avg_surplus_daily.toFixed(2);
+          document.getElementById("volatility")!.textContent =
+            agg.surplus_volatility_daily.toFixed(2);
+          document.getElementById("closingBalance")!.textContent =
+            `$${agg.closing_balance_last.toFixed(2)}`;
+
+          const ovr = agg.proposed_overrides;
+          document.getElementById("inventoryBand")!.textContent =
+            ovr.inventory_band.toString();
+          document.getElementById("lossLimit")!.textContent =
+            ovr.daily_loss_limit_bps.toString();
+          document.getElementById("maxNotional")!.textContent =
+            `$${ovr.max_notional_usd_day}`;
+          document.getElementById("minEdge")!.textContent =
+            ovr.min_edge_bps_baseline.toString();
+
+          resultsSection.classList.remove("hidden");
+          uploadStatus.textContent = `✓ Analyzed ${bulkData.total_files} statements`;
+          uploadStatus.className = "text-sm text-emerald-600";
+        } catch (e: any) {
+          uploadStatus.textContent = `Error: ${e.message}`;
+          uploadStatus.className = "text-sm text-red-600";
+          uploadBtn.disabled = false;
+        }
+      });
+
+      applyBtn?.addEventListener("click", async () => {
+        if (!extractedData) return;
+
+        applyBtn.disabled = true;
+        applyBtn.textContent = "Applying...";
+
+        try {
+          const ovr = extractedData.aggregate.proposed_overrides;
+
+          const r = await fetch(`${BASE}/recommendations/apply`, {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              "X-Api-Key": "DEV_KEY_123",
+            },
+            body: JSON.stringify({
+              tenant_id: tenantId,
+              inventory_band: ovr.inventory_band,
+              min_edge_bps: ovr.min_edge_bps_baseline ?? 1.0,
+              advisory: {
+                max_notional_usd_day: ovr.max_notional_usd_day,
+                daily_loss_limit_bps: ovr.daily_loss_limit_bps,
+              },
+            }),
+          });
+
+          if (!r.ok) throw new Error("Failed to apply recommendations");
+
+          const result = await r.json();
+          if (result.success) {
+            window.location.href = "/moneypenny/console";
+          } else {
+            throw new Error("Application failed");
+          }
+        } catch (e: any) {
+          alert(`Error: ${e.message}`);
+          applyBtn.disabled = false;
+          applyBtn.textContent = "Apply to Console →";
+        }
+      });
+    </script>
+  </body>
+</html>

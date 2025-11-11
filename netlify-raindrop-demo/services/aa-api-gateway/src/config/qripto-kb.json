@@ -1,0 +1,130 @@
+{
+  "overview": {
+    "qripto": "Qripto is a set of Quantum-Ready Internet protocols that make data, identity, and payments agent-first and privacy-preserving. It centers on iQubes (secure information containers), Aigents (AI agents), COYN ($QOYN) for broader value flows, and QriptoCENT (Qc), a cent-pegged micro-stablecoin engineered for ultra-fine, agent-to-agent commerce."
+  },
+  "faq": [
+    {
+      "q": "What is QriptoCENT (Qc)?",
+      "a": "A cent-pegged, agent-native micro-stablecoin (1 Qc = US $0.01) with sub-cent precision, designed for tiny programmable payments across media and agentic commerce."
+    },
+    {
+      "q": "How does Qc differ from $1 stablecoins?",
+      "a": "Qc prices micro-moments naturally (e.g., $0.001–$0.09), supports anti-spam tolls, and encodes splits/limits in iQubes; $1 units are too coarse for such interactions."
+    },
+    {
+      "q": "What are iQubes?",
+      "a": "Cryptographically bound containers for data, content, tools, models, and agents (5 primitives) with metaQube/BlakQube/tokenQube entanglement and fine-grained access."
+    },
+    {
+      "q": "What is x402?",
+      "a": "An agent-to-agent (A2A) standard for payments and iQube transfers, often used with DVN for cross-chain movement."
+    },
+    {
+      "q": "Where do metaKnyts and 21 Sats fit?",
+      "a": "They are the storyworld onboarding channel for the Quantum-Ready Internet; users unlock transmissions and, soon, the graphic novel using Knight COYN and Qc."
+    },
+    {
+      "q": "How does QriptoMedia work?",
+      "a": "Creators set Qc prices for unlocks/comments/DMs; x402 settles instantly; iQube policies auto-split revenue and manage access."
+    },
+    {
+      "q": "Can I move Qc across chains?",
+      "a": "Yes, via DVN/x402 using canonical sends, deferred minting, or remote custody, each with different trade-offs."
+    },
+    {
+      "q": "Is this private?",
+      "a": "Yes—privacy by design with iQubes and DiDQube/KybeDID. You control what is shared."
+    }
+  ],
+  "glossary": {
+    "iQubes": "Secure, token-controlled containers for data, content, tools, models, and agents.",
+    "metaQube": "Metadata component of an iQube.",
+    "BlakQube": "Private payload component of an iQube.",
+    "tokenQube": "Tokenized access key component of an iQube.",
+    "Aigent Protocol": "Single-agent pattern using iQubes.",
+    "AgentiQ protocol": "Multi-agent orchestration and policy (Aigent Z).",
+    "COYN": "Ecosystem token ($QOYN).",
+    "QriptoCENT": "Cent-pegged micro-stablecoin (Qc), sub-cent precision.",
+    "x402": "Agent-to-agent payments and iQube transfer standard.",
+    "DVN": "Cross-chain verification/transport network.",
+    "DiDQube": "Decentralized identity iQube.",
+    "KybeDID": "Durable root identity concept that can bind mutable operational DIDs.",
+    "QriptoMedia": "Media commerce via Qc micro-pricing.",
+    "HFT": "High-frequency trading; here, per-signal micro-settlement and experimentation."
+  },
+  "use_cases": {
+    "qriptomedia": {
+      "title": "QriptoMedia - Micropayments for Media",
+      "flows": [
+        "Pay-per-unlock for pages, panels, clips, or bonus lore (e.g., metaKnyts transmissions)",
+        "Pay-per-comment / pay-per-DM: combats spam, values attention",
+        "Tip-to-highlight: fans elevate panels/scenes; creators see demand signals",
+        "Auto-splits: revenue splits across collaborators via iQube policy; no spreadsheets",
+        "Stream-to-own: accrue micro-ownership rights via ongoing Qc micro-payments"
+      ],
+      "why_qc": "Sub-cent pricing lets you charge $0.001–$0.07-type amounts naturally (0.1–7 Qc), perfect for frictionless media moments."
+    },
+    "hft": {
+      "title": "HFT & Qc - Micro-lot Experimentation",
+      "features": [
+        "Micro-lot experimentation: run per-signal wagers at 0.1–5 Qc to tune strategies",
+        "Per-signal settlement via x402: agents pay/are paid per tick, feature, or model output",
+        "Risk capping: bound exposure by allocating a fixed Qc float across strategies",
+        "Data discipline: store bank statements or fills as DataQubes; run privacy-preserving analytics",
+        "Hardware trend synergy: as inference gets cheaper (e.g., 4-bit quantization), Qc's micro-pricing aligns with per-token/per-call economics"
+      ]
+    }
+  },
+  "workflows": {
+    "qriptomedia_unlock": [
+      "User identity via DiDQube/KybeDID",
+      "Wallet with small Qc balance",
+      "ContentQube advertises unlock price (e.g., 0.7 Qc)",
+      "User confirms",
+      "x402 settles Qc and emits a receipt",
+      "iQube policy unlocks content + records splits"
+    ],
+    "hft_signal_test": [
+      "Trader caps budget (e.g., 100 Qc)",
+      "Each candidate signal costs 0.05–0.5 Qc to test & settle via x402",
+      "Results and fills logged as DataQubes",
+      "Retain winners, kill losers automatically — exposure never exceeds 100 Qc"
+    ],
+    "cross_chain_deferred_mint": [
+      "Lock source balance + proof on Chain A",
+      "DVN attests state",
+      "Mint on Chain B when needed",
+      "Optional reconcile back to A or keep canonical on B"
+    ]
+  },
+  "audience_messages": {
+    "newcomers": "Qc makes a cent programmable, so you can pay tiny amounts safely to unlock stories, tip artists, or ask an AI a question.",
+    "creators": "Qc lets you set micro-prices per panel/comment and auto-split revenue with collaborators—no spreadsheets.",
+    "devs": "Identity (DiDQube/KybeDID) + iQube policy + x402 = composable per-action commerce and cross-chain portability via DVN.",
+    "traders": "Qc lets you run per-signal HFT experiments at sub-cent scale with hard risk caps."
+  },
+  "metaknyts": {
+    "overview": "metaKnyts is the saga introducing the Quantum-Ready Internet",
+    "characters": ["Kn0w1 (KnowOne)", "SatoshiKNYT"],
+    "21_sats": "21 Sats novella explores the mystery of Satoshi's disappearance and frames agentic sovereignty & data ethics",
+    "transmissions": "Comics made available with Knight COYN and Qc access tiers—an experiential on-ramp to Qripto",
+    "graphic_novel": "A metaKnyt graphic novel is coming, extending the mythos and deepening the QriptoMedia model",
+    "funding": "metaKnyts has raised ≈ $1.2M via Reg CF with ~3.5k community investors"
+  },
+  "education": {
+    "mental_model": "$1 → 100 Qc",
+    "starter_amount": "$0.50 = 50 Qc - explore: unlock a page, tip a panel, ask an agent a question",
+    "privacy": "Privacy-preserving by design (iQubes + DiDQube/KybeDID); you control what's shared",
+    "learn_to_earn": "Complete quests, glossary challenges, or feedback tasks to earn Qc micro-rewards",
+    "controls": "Spending limits in iQube policy; perfect for classrooms and youth programs",
+    "accessibility": "Cent-level accounting + cross-chain rails let people participate without large balances"
+  },
+  "qc_vs_dollar_stablecoins": {
+    "granularity": "Qc prices down to sub-cent; $1 coins are coarse for micro-commerce",
+    "agent_native": "Qc is designed for per-action payments and splits; $1 coins typically need extra wrappers",
+    "spam_resistance": "Tiny Qc tolls curb bots/abuse while staying friendly to real users",
+    "user_cognition": "Cent math is intuitive; no awkward decimals from a $1 base",
+    "programmability": "Spending limits, auto-splits, and time/usage locks encoded in iQubes",
+    "cross_chain": "DVN + x402 support canonical, deferred-mint, and remote-custody workflows"
+  }
+}

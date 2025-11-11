@@ -1,0 +1,229 @@
+import React, { useEffect, useRef, useState } from "react";
+import { Drawer, SectionHeader, Button, Badge, ScrollArea } from "../ui/ui";
+import { RDP } from "../../lib/rdp";
+
+type Msg = { role: "user" | "assistant" | "system"; text: string; ts: string };
+
+export default function MoneyPennyDrawer({
+  tenantId, personaId
+}: {
+  tenantId: string;
+  personaId: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [consent, setConsent] = useState(false);
+  const [input, setInput] = useState("");
+  const [chat, setChat] = useState<Msg[]>([
+    { role: "assistant", text: "Hi — I'm MoneyPenny. Ask me anything about Q¢ micro-slippage, your trading performance, or general HFT concepts. I'll use your non-PII aggregates and trading memories.", ts: new Date().toISOString() }
+  ]);
+  const [insights, setInsights] = useState<{ capture_bps_24h: number; fills_24h: number; chains: string[] }|null>(null);
+  const [metaVatarMode, setMetaVatarMode] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const avatarContainerRef = useRef<HTMLDivElement>(null);
+
+  // Listen for open/close events from the page
+  useEffect(() => {
+    const handleOpen = () => setOpen(true);
+    const handleClose = () => setOpen(false);
+    window.addEventListener('moneypenny:open', handleOpen);
+    window.addEventListener('moneypenny:close', handleClose);
+    return () => {
+      window.removeEventListener('moneypenny:open', handleOpen);
+      window.removeEventListener('moneypenny:close', handleClose);
+    };
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      const prefs = await RDP.mem.prefsGet(tenantId, personaId).catch(()=>({doc_level_excerpts:false}));
+      setConsent(!!prefs.doc_level_excerpts);
+      const s = await RDP.trading.sessionSummary(tenantId, personaId).catch(()=>null);
+      if (s) setInsights(s);
+    })();
+  }, [tenantId, personaId]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 999999, behavior: "smooth" });
+  }, [chat, open]);
+
+  async function send() {
+    const q = input.trim(); if (!q) return;
+    setInput("");
+    setChat(c => [...c, { role:"user", text:q, ts:new Date().toISOString() }]);
+
+    // 1) Search memories (aggregates, trading history, glossary)
+    const shards = [
+      `mem://profile-aggregates/${tenantId}/${personaId}`,
+      `mem://trading-history/${tenantId}/${personaId}`,
+      `mem://glossary/finance`
+    ];
+    const memHits = await RDP.mem.search(shards, q, 6).catch(()=>[]);
+    const memSummary = memHits.slice(0,3).map(h => h.snippet).join("\n— ");
+
+    // 2) Build LLM context request (Venice behind your backend)
+    const base = import.meta.env.PUBLIC_MONEYPENNY_BASE;
+    const payload = {
+      tenant_id: tenantId,
+      persona_id: personaId,
+      question: q,
+      consent: { doc_level_excerpts: consent },
+      context: { mem_snippets: memSummary },
+    };
+    // You can swap this for a streaming endpoint if desired
+    const r = await fetch(`${base}/chat/answer`, {
+      method: "POST",
+      headers: { "content-type":"application/json" },
+      body: JSON.stringify(payload),
+    });
+    let reply = "Sorry — I couldn't reach MoneyPenny LLM.";
+    if (r.ok) {
+      const j = await r.json();
+      reply = j.answer || reply;
+    }
+    setChat(c => [...c, { role:"assistant", text: reply, ts: new Date().toISOString() }]);
+  }
+
+  async function toggleDocLevel() {
+    const next = !consent;
+    setConsent(next);
+    await RDP.mem.prefsSet(tenantId, personaId, { doc_level_excerpts: next });
+  }
+
+  function toggleMetaVatar() {
+    const willBeMetaVatar = !metaVatarMode;
+    console.log(`Toggling metaVatar: ${metaVatarMode} -> ${willBeMetaVatar}`);
+
+    // If switching from metaVatar back to text, clean up the avatar elements
+    if (!willBeMetaVatar && metaVatarMode) {
+      console.log('Switching back to text chat, cleaning up avatar...');
+      // Remove D-ID script
+      const script = document.querySelector('script[src*="agent.d-id.com"]');
+      if (script) {
+        script.remove();
+        console.log('Removed D-ID script');
+      }
+      // Remove the agent element
+      const agentElement = document.querySelector('[data-name="did-agent"]');
+      if (agentElement) {
+        agentElement.remove();
+        console.log('Removed agent element');
+      }
+      // Remove all agent elements
+      document.querySelectorAll('[data-name="did-agent"]').forEach(el => {
+        el.remove();
+        console.log('Removed additional agent element');
+      });
+    }
+
+    setMetaVatarMode(willBeMetaVatar);
+  }
+
+  // Load D-ID avatar script when metaVatar mode is activated
+  useEffect(() => {
+    if (metaVatarMode && avatarContainerRef.current) {
+      console.log('Loading D-ID avatar...');
+
+      // Remove any existing script and agent elements
+      const existingScript = document.querySelector('script[src*="agent.d-id.com"]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+      const existingAgent = document.querySelector('[data-name="did-agent"]');
+      if (existingAgent) {
+        existingAgent.remove();
+      }
+
+      // Create and append the D-ID script
+      const script = document.createElement('script');
+      script.type = 'module';
+      script.src = 'https://agent.d-id.com/v2/index.js';
+      script.setAttribute('data-mode', 'fabio');
+      script.setAttribute('data-client-key', 'Z29vZ2xlLW9hdXRoMnwxMDcyNjU3ODI2NjQ5ODgyODU4MDk6YkoxSDdROEp5S2Q1Mk1CbEx0ODE2');
+      script.setAttribute('data-agent-id', 'v2_agt_K6rQNYxY');
+      script.setAttribute('data-name', 'did-agent');
+      script.setAttribute('data-monitor', 'true');
+      script.setAttribute('data-orientation', 'horizontal');
+      script.setAttribute('data-position', 'right');
+
+      avatarContainerRef.current.appendChild(script);
+
+      return () => {
+        console.log('Cleaning up D-ID avatar...');
+        // Cleanup when unmounting or switching back
+        const scriptToRemove = document.querySelector('script[src*="agent.d-id.com"]');
+        if (scriptToRemove) {
+          scriptToRemove.remove();
+        }
+        // Remove all agent elements
+        document.querySelectorAll('[data-name="did-agent"]').forEach(el => el.remove());
+        // Also try to remove by ID or class that D-ID might create
+        const agentWrapper = document.querySelector('#did-agent-wrapper, .did-agent-wrapper');
+        if (agentWrapper) {
+          agentWrapper.remove();
+        }
+      };
+    }
+  }, [metaVatarMode]);
+
+  return (
+    <Drawer open={open} onClose={() => setOpen(false)}
+            title={<div><div style={{ fontWeight: 600 }}>MoneyPenny</div><div style={{ fontSize: '0.875rem', fontWeight: 400, color: 'var(--ui-text-weak)' }}>Private Trading Chat</div></div>}
+            right={<Badge>{consent ? "Doc-level: ON" : "Aggregates only"}</Badge>}
+            style={{ maxWidth: metaVatarMode ? '900px' : '600px' }}>
+      <div className="ui-col ui-gap-2">
+        {/* Session insights */}
+        <div className="ui-row ui-gap-2" style={{ flexWrap: 'wrap' }}>
+          <Badge variant="claims">24h Capture: {insights ? insights.capture_bps_24h.toFixed(2) : "—"} bps</Badge>
+          <Badge variant="custody">Fills: {insights ? insights.fills_24h : "—"}</Badge>
+          <Badge>Chains: {insights ? insights.chains.join(", ") : "—"}</Badge>
+        </div>
+
+        {/* Consent toggle */}
+        {!metaVatarMode && (
+          <div className="ui-row ui-gap-2">
+            <input id="docT" type="checkbox" checked={consent} onChange={toggleDocLevel} />
+            <label htmlFor="docT" className="ui-text-11 ui-text-weak">
+              Allow <b>redacted statement excerpts</b> for specific answers (off by default)
+            </label>
+          </div>
+        )}
+
+        {/* metaVatar mode - show avatar */}
+        {metaVatarMode && (
+          <div ref={avatarContainerRef} style={{ minHeight: '500px', width: '100%' }}>
+            {/* D-ID avatar will be injected here */}
+          </div>
+        )}
+
+        {/* Text chat mode - show chat history and input */}
+        {!metaVatarMode && (
+          <>
+            {/* Chat history */}
+            <ScrollArea maxHeight={360} className="ui-p-2 ui-ring ui-rounded">
+              <div className="ui-col ui-gap-2" ref={scrollRef}>
+                {chat.map((m,i)=>(
+                  <div key={i} className="ui-card ui-card-ring">
+                    <div className="ui-text-11 ui-text-weak">{m.role === "user" ? "You" : "MoneyPenny"} — {new Date(m.ts).toLocaleTimeString()}</div>
+                    <div className="ui-mt-2" style={{ whiteSpace: "pre-wrap" }}>{m.text}</div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+
+            {/* Composer */}
+            <div className="ui-row ui-gap-2">
+              <input className="ui-input" placeholder="Ask about Q¢ trading, HFT terms, or your performance…"
+                     value={input} onChange={(e)=>setInput(e.target.value)} onKeyDown={(e)=>{ if(e.key==="Enter") send(); }} />
+              <Button onClick={send}>Send</Button>
+            </div>
+          </>
+        )}
+
+        {/* Toggle button between text chat and metaVatar */}
+        <Button onClick={toggleMetaVatar} variant="ghost" style={{ width: '100%', marginTop: '8px' }}>
+          {metaVatarMode ? '💬 Text Chat' : '🤖 metaVatar'}
+        </Button>
+      </div>
+    </Drawer>
+  );
+}
