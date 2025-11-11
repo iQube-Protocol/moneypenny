@@ -65,13 +65,18 @@ export default function BankingWizard() {
       }
       await refreshList();
 
-      // Get aggregates
-      const aggResp = await RDP.profile.getAggregates(tenantId, personaDid).catch(()=>null);
+      // Clear uploaded files after successful upload
+      setUploadedFiles([]);
+
+      // COMPUTE aggregates from uploaded files
+      const aggResp = await RDP.profile.computeAggregate(tenantId, personaDid, bucketId);
       if (aggResp && aggResp.aggregate) {
         setAgg(aggResp.aggregate);
         setRec(aggResp.aggregate?.proposed_overrides);
         setMonthCount(aggResp.monthCount || files.length);
         setCurrentStep(2);
+      } else {
+        setError("Failed to compute financial profile. Please try again.");
       }
     } catch (e:any) {
       setError(e.message || "upload failed");
