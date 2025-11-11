@@ -114,7 +114,7 @@ export const RDP = {
   trading: {
     async sessionSummary(tenant_id: string, persona_id: string) {
       const base = import.meta.env.PUBLIC_MONEYPENNY_BASE;
-      const r = await fetch(`${base}/mem/trading/summary?tenant_id=${tenant_id}&persona_id=${persona_id}`);
+      const r = await fetch(`${base}/rdp/mem/trading/summary?tenant_id=${tenant_id}&persona_id=${persona_id}`);
       if (!r.ok) throw new Error("summary failed");
       return r.json() as Promise<{ capture_bps_24h: number; fills_24h: number; chains: string[] }>;
     }

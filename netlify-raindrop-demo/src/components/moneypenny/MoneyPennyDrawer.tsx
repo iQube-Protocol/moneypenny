@@ -1,15 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Drawer, SectionHeader, Button, Badge, ScrollArea } from "../ui/ui";
 import { RDP } from "../../lib/rdp";
+import { usePersona } from "../../lib/personaStore";
 
 type Msg = { role: "user" | "assistant" | "system"; text: string; ts: string };
 
-export default function MoneyPennyDrawer({
-  tenantId, personaId
-}: {
-  tenantId: string;
-  personaId: string;
-}) {
+export default function MoneyPennyDrawer() {
+  const { tenantId, personaDid } = usePersona();
   const [open, setOpen] = useState(false);
   const [consent, setConsent] = useState(false);
   const [input, setInput] = useState("");
@@ -35,12 +32,12 @@ export default function MoneyPennyDrawer({
 
   useEffect(() => {
     (async () => {
-      const prefs = await RDP.mem.prefsGet(tenantId, personaId).catch(()=>({doc_level_excerpts:false}));
+      const prefs = await RDP.mem.prefsGet(tenantId, personaDid).catch(()=>({doc_level_excerpts:false}));
       setConsent(!!prefs.doc_level_excerpts);
-      const s = await RDP.trading.sessionSummary(tenantId, personaId).catch(()=>null);
+      const s = await RDP.trading.sessionSummary(tenantId, personaDid).catch(()=>null);
       if (s) setInsights(s);
     })();
-  }, [tenantId, personaId]);
+  }, [tenantId, personaDid]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 999999, behavior: "smooth" });
@@ -53,8 +50,8 @@ export default function MoneyPennyDrawer({
 
     // 1) Search memories (aggregates, trading history, glossary)
     const shards = [
-      `mem://profile-aggregates/${tenantId}/${personaId}`,
-      `mem://trading-history/${tenantId}/${personaId}`,
+      `mem://profile-aggregates/${tenantId}/${personaDid}`,
+      `mem://trading-history/${tenantId}/${personaDid}`,
       `mem://glossary/finance`
     ];
     const memHits = await RDP.mem.search(shards, q, 6).catch(()=>[]);
@@ -64,7 +61,7 @@ export default function MoneyPennyDrawer({
     const base = import.meta.env.PUBLIC_MONEYPENNY_BASE;
     const payload = {
       tenant_id: tenantId,
-      persona_id: personaId,
+      persona_id: personaDid,
       question: q,
       consent: { doc_level_excerpts: consent },
       context: { mem_snippets: memSummary },
@@ -86,7 +83,7 @@ export default function MoneyPennyDrawer({
   async function toggleDocLevel() {
     const next = !consent;
     setConsent(next);
-    await RDP.mem.prefsSet(tenantId, personaId, { doc_level_excerpts: next });
+    await RDP.mem.prefsSet(tenantId, personaDid, { doc_level_excerpts: next });
   }
 
   function toggleMetaVatar() {

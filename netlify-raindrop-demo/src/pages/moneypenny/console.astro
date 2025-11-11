@@ -147,7 +147,12 @@ const navItems = [
                 <input type="number" id="intentSize" value="1000" class="w-full px-2 py-1.5 rounded-md bg-slate-700 border border-slate-600 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
               <div>
-                <label class="block text-xs text-gray-400 mb-1">Min Edge (bps)</label>
+                <label class="block text-xs text-gray-400 mb-1">
+                  Min Edge (bps)
+                  <span id="edgeRecommendation" class="hidden ml-1 text-emerald-400 font-medium">
+                    (Recommended: <span id="recommendedEdgeValue">0</span>)
+                  </span>
+                </label>
                 <input type="number" id="intentEdge" value="1.5" step="0.1" class="w-full px-2 py-1.5 rounded-md bg-slate-700 border border-slate-600 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
             </div>
@@ -236,7 +241,7 @@ const navItems = [
     <UIStyles client:only="react" />
     <PersonaProvider client:only="react">
       <PersonaDrawer client:load />
-      <MoneyPennyDrawer client:load tenantId="qripto" personaId="" />
+      <MoneyPennyDrawer client:load />
     </PersonaProvider>
 
     <script define:vars={{ BASE }}>
@@ -358,7 +363,24 @@ const navItems = [
         configBanner.classList.remove('hidden');
 
         // Auto-populate intent form with recommended settings
-        document.getElementById('intentEdge').value = appliedConfig.minEdge?.toFixed(1) || '1.5';
+        const recommendedEdge = appliedConfig.minEdge?.toFixed(1) || '1.5';
+        document.getElementById('intentEdge').value = recommendedEdge;
+
+        // Show edge recommendation inline
+        const edgeRecommendation = document.getElementById('edgeRecommendation');
+        const recommendedEdgeValue = document.getElementById('recommendedEdgeValue');
+        recommendedEdgeValue.textContent = recommendedEdge;
+        edgeRecommendation.classList.remove('hidden');
+
+        // Update the min edge gauge value
+        const minEdgeVal = document.getElementById('minEdgeVal');
+        if (minEdgeVal) {
+          minEdgeVal.textContent = recommendedEdge;
+          // Update the min edge bar position (assuming max is 5 bps)
+          const minEdgeBar = document.getElementById('minEdgeBar');
+          const minEdgePct = Math.min(100, (parseFloat(recommendedEdge) / 5) * 100);
+          minEdgeBar.style.width = `${minEdgePct}%`;
+        }
 
         // Handle close button
         document.getElementById('closeConfigBtn').addEventListener('click', () => {
