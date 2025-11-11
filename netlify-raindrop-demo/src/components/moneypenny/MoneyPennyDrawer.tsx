@@ -49,6 +49,7 @@ export default function MoneyPennyDrawer() {
   const [insights, setInsights] = useState<{ capture_bps_24h: number; fills_24h: number; chains: string[] }|null>(null);
   const [metaVatarMode, setMetaVatarMode] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const avatarContainerRef = useRef<HTMLDivElement>(null);
 
   // Listen for open/close events from the page
   useEffect(() => {
@@ -137,6 +138,48 @@ export default function MoneyPennyDrawer() {
     setMetaVatarMode(willBeMetaVatar);
   }
 
+  // Load D-ID avatar script when metaVatar mode is activated
+  useEffect(() => {
+    if (metaVatarMode && avatarContainerRef.current) {
+      console.log('Loading D-ID avatar script...');
+
+      // Remove any existing script and agent elements
+      const existingScript = document.querySelector('script[src*="agent.d-id.com"]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+      const existingAgent = document.querySelector('[data-name="did-agent"]');
+      if (existingAgent) {
+        existingAgent.remove();
+      }
+
+      // Create and append the D-ID script
+      const script = document.createElement('script');
+      script.type = 'module';
+      script.src = 'https://agent.d-id.com/v2/index.js';
+      script.setAttribute('data-mode', 'fabio');
+      script.setAttribute('data-client-key', 'Z29vZ2xlLW9hdXRoMnwxMDcyNjU3ODI2NjQ5ODgyODU4MDk6YkoxSDdROEp5S2Q1Mk1CbEx0ODE2');
+      script.setAttribute('data-agent-id', 'v2_agt_K6rQNYxY');
+      script.setAttribute('data-name', 'did-agent');
+      script.setAttribute('data-monitor', 'true');
+      script.setAttribute('data-orientation', 'horizontal');
+      script.setAttribute('data-position', 'right');
+
+      avatarContainerRef.current.appendChild(script);
+
+      return () => {
+        console.log('Cleaning up D-ID avatar...');
+        // Cleanup when unmounting or switching back
+        const scriptToRemove = document.querySelector('script[src*="agent.d-id.com"]');
+        if (scriptToRemove) {
+          scriptToRemove.remove();
+        }
+        // Remove all agent elements
+        document.querySelectorAll('[data-name="did-agent"]').forEach(el => el.remove());
+      };
+    }
+  }, [metaVatarMode]);
+
   return (
     <Drawer open={open} onClose={() => setOpen(false)}
             title={<div><div style={{ fontWeight: 600 }}>MoneyPenny</div><div style={{ fontSize: '0.875rem', fontWeight: 400, color: 'var(--ui-text-weak)' }}>Private Trading Chat</div></div>}
@@ -160,20 +203,24 @@ export default function MoneyPennyDrawer() {
           </div>
         )}
 
-        {/* metaVatar mode - D-ID agent iframe */}
+        {/* metaVatar mode - D-ID agent will be injected here */}
         {metaVatarMode && (
-          <div style={{ width: '100%', height: '100%', minHeight: '700px', flex: 1 }}>
-            <iframe
-              src="https://studio.d-id.com/agents/share?id=v2_agt_dY78cKv2&utm_source=copy&key=WjI5dloyeGxMVzloZFhSb01ud3hNRGN5TmpVM09ESTJOalE1T0RneU9ESTFPREE1T21KS01FZzNVVGhLZVV0a05USk5RbXhNZERneE5nPT0="
-              style={{
-                width: '100%',
-                height: '100%',
-                border: 'none',
-                borderRadius: '8px'
-              }}
-              allow="microphone; camera"
-              title="MoneyPenny AI Avatar"
-            />
+          <div
+            ref={avatarContainerRef}
+            style={{
+              width: '100%',
+              height: '100%',
+              minHeight: '600px',
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#1e293b',
+              borderRadius: '8px',
+              position: 'relative'
+            }}
+          >
+            <div style={{ color: '#94a3b8', fontSize: '14px' }}>Loading avatar...</div>
           </div>
         )}
 
