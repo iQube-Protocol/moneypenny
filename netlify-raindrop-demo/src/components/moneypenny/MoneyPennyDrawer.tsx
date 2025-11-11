@@ -1,13 +1,46 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Drawer, SectionHeader, Button, Badge, ScrollArea } from "../ui/ui";
 import { RDP } from "../../lib/rdp";
-import { usePersona } from "../../lib/personaStore";
 
 type Msg = { role: "user" | "assistant" | "system"; text: string; ts: string };
 
 export default function MoneyPennyDrawer() {
-  const { tenantId, personaDid } = usePersona();
+  // Load persona from localStorage directly instead of using context
+  const [tenantId, setTenantId] = useState("qripto");
+  const [personaDid, setPersonaDid] = useState("");
+
+  useEffect(() => {
+    // Load persona from localStorage
+    try {
+      const raw = localStorage.getItem("qripto.persona");
+      if (raw) {
+        const p = JSON.parse(raw);
+        setTenantId(p.tenantId || "qripto");
+        setPersonaDid(p.personaDid || "");
+      }
+    } catch (e) {
+      console.error("Failed to load persona:", e);
+    }
+
+    // Listen for persona changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "qripto.persona" && e.newValue) {
+        try {
+          const p = JSON.parse(e.newValue);
+          setTenantId(p.tenantId || "qripto");
+          setPersonaDid(p.personaDid || "");
+        } catch {}
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
   const [open, setOpen] = useState(false);
+
+  // Debug: log when open state changes
+  useEffect(() => {
+    console.log('MoneyPennyDrawer: open state changed to', open);
+  }, [open]);
   const [consent, setConsent] = useState(false);
   const [input, setInput] = useState("");
   const [chat, setChat] = useState<Msg[]>([
@@ -20,11 +53,24 @@ export default function MoneyPennyDrawer() {
 
   // Listen for open/close events from the page
   useEffect(() => {
-    const handleOpen = () => setOpen(true);
-    const handleClose = () => setOpen(false);
+    console.log('MoneyPennyDrawer: Component mounted, setting up event listeners');
+    const handleOpen = () => {
+      console.log('MoneyPennyDrawer: Received moneypenny:open event, opening drawer');
+      setOpen(true);
+    };
+    const handleClose = () => {
+      console.log('MoneyPennyDrawer: Received moneypenny:close event, closing drawer');
+      setOpen(false);
+    };
     window.addEventListener('moneypenny:open', handleOpen);
     window.addEventListener('moneypenny:close', handleClose);
+    console.log('MoneyPennyDrawer: Event listeners attached successfully');
+
+    // Test if we can access the event
+    window.dispatchEvent(new CustomEvent('test-event'));
+
     return () => {
+      console.log('MoneyPennyDrawer: Cleaning up event listeners');
       window.removeEventListener('moneypenny:open', handleOpen);
       window.removeEventListener('moneypenny:close', handleClose);
     };

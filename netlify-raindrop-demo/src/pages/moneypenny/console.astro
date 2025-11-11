@@ -763,15 +763,26 @@ const navItems = [
 
       // Wait for React components to mount before setting up button listeners
       setTimeout(() => {
+        console.log('Setting up button event listeners');
+
         // Persona button
-        document.getElementById('personaBtn').addEventListener('click', () => {
-          window.dispatchEvent(new CustomEvent('persona:open'));
-        });
+        const personaBtn = document.getElementById('personaBtn');
+        if (personaBtn) {
+          personaBtn.addEventListener('click', () => {
+            console.log('Persona button clicked, dispatching persona:open');
+            window.dispatchEvent(new CustomEvent('persona:open'));
+          });
+        }
 
         // MoneyPenny Chat Drawer
-        document.getElementById('openChatBtn').addEventListener('click', () => {
-          window.dispatchEvent(new CustomEvent('moneypenny:open'));
-        });
+        const chatBtn = document.getElementById('openChatBtn');
+        if (chatBtn) {
+          chatBtn.addEventListener('click', () => {
+            console.log('Chat button clicked, dispatching moneypenny:open');
+            window.dispatchEvent(new CustomEvent('moneypenny:open'));
+          });
+        }
+        console.log('Button listeners attached');
       }, 500);
 
       // Start SSE on page load
