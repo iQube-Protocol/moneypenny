@@ -761,15 +761,18 @@ const navItems = [
       if (fills.length > 0) renderFills();
       if (captures.length > 0) renderCapture();
 
-      // Persona button
-      document.getElementById('personaBtn').addEventListener('click', () => {
-        window.dispatchEvent(new CustomEvent('persona:open'));
-      });
+      // Wait for React components to mount before setting up button listeners
+      setTimeout(() => {
+        // Persona button
+        document.getElementById('personaBtn').addEventListener('click', () => {
+          window.dispatchEvent(new CustomEvent('persona:open'));
+        });
 
-      // MoneyPenny Chat Drawer
-      document.getElementById('openChatBtn').addEventListener('click', () => {
-        window.dispatchEvent(new CustomEvent('moneypenny:open'));
-      });
+        // MoneyPenny Chat Drawer
+        document.getElementById('openChatBtn').addEventListener('click', () => {
+          window.dispatchEvent(new CustomEvent('moneypenny:open'));
+        });
+      }, 500);
 
       // Start SSE on page load
       setTimeout(startSSE, 300);
