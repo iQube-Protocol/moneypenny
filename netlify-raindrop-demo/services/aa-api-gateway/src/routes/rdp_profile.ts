@@ -58,7 +58,7 @@ export async function rdpProfileComputeAggregate(req: Request, res: Response) {
       cash_buffer_days: cashBufferDays,
       proposed_overrides: {
         inventory_band: Math.min(closingBalance * 0.05, 2000),
-        min_edge_bps_baseline: cashBufferDays > 60 ? 0.5 : cashBufferDays > 30 ? 1.0 : 2.0,
+        min_edge_bps_baseline: cashBufferDays > 60 ? 3.0 : cashBufferDays > 30 ? 4.0 : 5.0,
         max_notional_usd_day: Math.min(closingBalance * 0.2, 5000),
         daily_loss_limit_bps: cashBufferDays > 60 ? 50 : cashBufferDays > 30 ? 30 : 20
       }
