@@ -141,42 +141,64 @@ export default function MoneyPennyDrawer() {
   // Load D-ID avatar script when metaVatar mode is activated
   useEffect(() => {
     if (metaVatarMode && avatarContainerRef.current) {
-      console.log('Loading D-ID avatar script...');
+      console.log('metaVatar mode activated, avatarContainerRef:', avatarContainerRef.current);
 
       // Remove any existing script and agent elements
       const existingScript = document.querySelector('script[src*="agent.d-id.com"]');
       if (existingScript) {
+        console.log('Removing existing D-ID script');
         existingScript.remove();
       }
       const existingAgent = document.querySelector('[data-name="did-agent"]');
       if (existingAgent) {
+        console.log('Removing existing D-ID agent');
         existingAgent.remove();
       }
 
-      // Create and append the D-ID script
-      const script = document.createElement('script');
-      script.type = 'module';
-      script.src = 'https://agent.d-id.com/v2/index.js';
-      script.setAttribute('data-mode', 'fabio');
-      script.setAttribute('data-client-key', 'Z29vZ2xlLW9hdXRoMnwxMDcyNjU3ODI2NjQ5ODgyODU4MDk6YkoxSDdROEp5S2Q1Mk1CbEx0ODE2');
-      script.setAttribute('data-agent-id', 'v2_agt_K6rQNYxY');
-      script.setAttribute('data-name', 'did-agent');
-      script.setAttribute('data-monitor', 'true');
-      script.setAttribute('data-orientation', 'horizontal');
-      script.setAttribute('data-position', 'right');
+      // Wait a bit for the container to be properly rendered
+      setTimeout(() => {
+        if (!avatarContainerRef.current) {
+          console.error('Avatar container ref lost after timeout');
+          return;
+        }
 
-      avatarContainerRef.current.appendChild(script);
-      console.log('D-ID avatar script loaded');
+        console.log('Creating D-ID script element...');
+        // Create and append the D-ID script
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.src = 'https://agent.d-id.com/v2/index.js';
+        script.setAttribute('data-mode', 'fabio');
+        script.setAttribute('data-client-key', 'Z29vZ2xlLW9hdXRoMnwxMDcyNjU3ODI2NjQ5ODgyODU4MDk6YkoxSDdROEp5S2Q1Mk1CbEx0ODE2');
+        script.setAttribute('data-agent-id', 'v2_agt_K6rQNYxY');
+        script.setAttribute('data-name', 'did-agent');
+        script.setAttribute('data-monitor', 'true');
+        script.setAttribute('data-orientation', 'horizontal');
+        script.setAttribute('data-position', 'right');
+
+        script.onload = () => {
+          console.log('D-ID script loaded successfully');
+        };
+        script.onerror = (err) => {
+          console.error('D-ID script failed to load:', err);
+        };
+
+        console.log('Appending script to container...');
+        avatarContainerRef.current.appendChild(script);
+        console.log('D-ID script appended, script element:', script);
+      }, 100);
 
       return () => {
         console.log('Cleaning up D-ID avatar...');
         // Cleanup when unmounting or switching back
         const scriptToRemove = document.querySelector('script[src*="agent.d-id.com"]');
         if (scriptToRemove) {
+          console.log('Removing script in cleanup');
           scriptToRemove.remove();
         }
         // Remove all agent elements
-        document.querySelectorAll('[data-name="did-agent"]').forEach(el => el.remove());
+        const agents = document.querySelectorAll('[data-name="did-agent"]');
+        console.log('Removing agent elements, found:', agents.length);
+        agents.forEach(el => el.remove());
       };
     }
   }, [metaVatarMode]);
