@@ -35,31 +35,39 @@ export async function rdpProfileGetAggregates(req: Request, res: Response) {
 
 export async function rdpProfileComputeAggregate(req: Request, res: Response) {
   try {
-    const { tenant_id, persona_id, months } = req.body;
+    const { tenant_id, persona_id, bucket_id } = req.body;
 
-    if (!tenant_id || !persona_id || !months) {
-      return res.status(400).json({ error: 'tenant_id, persona_id, and months required' });
+    if (!tenant_id || !persona_id || !bucket_id) {
+      return res.status(400).json({ error: 'tenant_id, persona_id, and bucket_id required' });
     }
 
-    // Mock aggregate computation
+    // Mock file count - in real implementation, would query bucket
+    const monthCount = Math.floor(Math.random() * 6) + 3; // 3-9 months
+
+    // Mock aggregate computation with randomized values
+    const avgIncome = 8500 + Math.random() * 3000;
+    const avgExpenses = 6200 + Math.random() * 2000;
+    const closingBalance = 12000 + Math.random() * 10000;
+    const cashBufferDays = Math.floor(closingBalance / (avgExpenses / 30));
+
     const aggregate = {
-      avg_surplus_daily: 150.0,
-      surplus_volatility_daily: 45.0,
-      closing_balance_last: 5000.0,
-      avg_daily_expenses: 80.0,
-      cash_buffer_days: 62,
+      avg_surplus_daily: (avgIncome - avgExpenses) / 30,
+      surplus_volatility_daily: 45.0 + Math.random() * 20,
+      closing_balance_last: closingBalance,
+      avg_daily_expenses: avgExpenses / 30,
+      cash_buffer_days: cashBufferDays,
       proposed_overrides: {
-        inventory_band: 1.81,
-        min_edge_bps_baseline: 1.0,
-        max_notional_usd_day: 52.5,
-        daily_loss_limit_bps: 15
+        inventory_band: Math.min(closingBalance * 0.05, 2000),
+        min_edge_bps_baseline: cashBufferDays > 60 ? 0.5 : cashBufferDays > 30 ? 1.0 : 2.0,
+        max_notional_usd_day: Math.min(closingBalance * 0.2, 5000),
+        daily_loss_limit_bps: cashBufferDays > 60 ? 50 : cashBufferDays > 30 ? 30 : 20
       }
     };
 
     const key = getAggregateKey(tenant_id, persona_id);
     const data = {
       aggregate,
-      monthCount: months.length,
+      monthCount,
       computed_at: new Date().toISOString()
     };
 

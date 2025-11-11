@@ -84,27 +84,27 @@ export const RDP = {
   },
   // Existing profile aggregate endpoints you already exposed:
   profile: {
-    async computeAggregate(monthsPayload: any) {
+    async computeAggregate(tenant_id: string, persona_id: string, bucket_id: string) {
       const base = import.meta.env.PUBLIC_BANKING_PROFILE_BASE;
-      const r = await fetch(`${base}/profile/aggregate`, {
+      const r = await fetch(`${base}/rdp/profile/aggregate`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(monthsPayload),
+        body: JSON.stringify({ tenant_id, persona_id, bucket_id }),
       });
       if (!r.ok) throw new Error("aggregate failed");
       return r.json();
     },
     async getAggregates(tenant_id: string, persona_id: string) {
       const base = import.meta.env.PUBLIC_BANKING_PROFILE_BASE;
-      const r = await fetch(`${base}/profile/aggregates?tenant_id=${tenant_id}&persona_id=${persona_id}`);
+      const r = await fetch(`${base}/rdp/profile/aggregates?tenant_id=${tenant_id}&persona_id=${persona_id}`);
       if (!r.ok) throw new Error("get aggregates failed");
       return r.json();
     },
     async applyToConsole(payload: any) {
       const base = import.meta.env.PUBLIC_MONEYPENNY_BASE;
-      const r = await fetch(`${base}/recommendations/apply`, {
+      const r = await fetch(`${base}/rdp/profile/apply`, {
         method: "POST",
-        headers: { "content-type": "application/json", "X-Api-Key":"DEV_KEY_123" },
+        headers: { "content-type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (!r.ok) throw new Error("apply failed");
