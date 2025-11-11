@@ -1,7 +1,7 @@
 [build]
-  base = "."
-  publish = "dist"
-  command = "npm run build"
+  base = "netlify-raindrop-demo"
+  publish = "netlify-raindrop-demo/dist"
+  command = "cd netlify-raindrop-demo && npm run build"
 
 [functions]
-  directory = "netlify/functions"
+  directory = "netlify-raindrop-demo/netlify/functions"
