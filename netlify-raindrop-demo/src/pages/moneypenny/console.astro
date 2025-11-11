@@ -240,8 +240,8 @@ const navItems = [
     <!-- MoneyPenny Components -->
     <UIStyles client:only="react" />
     <PersonaProvider client:only="react">
-      <PersonaDrawer client:load />
-      <MoneyPennyDrawer client:load />
+      <PersonaDrawer client:only="react" />
+      <MoneyPennyDrawer client:only="react" />
     </PersonaProvider>
 
     <script define:vars={{ BASE }}>
