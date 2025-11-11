@@ -183,9 +183,8 @@ export default function MoneyPennyDrawer() {
   return (
     <Drawer open={open} onClose={() => setOpen(false)}
             title={<div><div style={{ fontWeight: 600 }}>MoneyPenny</div><div style={{ fontSize: '0.875rem', fontWeight: 400, color: 'var(--ui-text-weak)' }}>Private Trading Chat</div></div>}
-            right={<Badge>{consent ? "Doc-level: ON" : "Aggregates only"}</Badge>}
-            style={{ maxWidth: metaVatarMode ? '1200px' : '600px', width: metaVatarMode ? '90vw' : 'auto' }}>
-      <div className="ui-col ui-gap-2" style={{ height: metaVatarMode ? '80vh' : 'auto' }}>
+            right={<Badge>{consent ? "Doc-level: ON" : "Aggregates only"}</Badge>}>
+      <div className="ui-col ui-gap-2">
         {/* Session insights */}
         <div className="ui-row ui-gap-2" style={{ flexWrap: 'wrap' }}>
           <Badge variant="claims">24h Capture: {insights ? insights.capture_bps_24h.toFixed(2) : "—"} bps</Badge>
@@ -194,59 +193,34 @@ export default function MoneyPennyDrawer() {
         </div>
 
         {/* Consent toggle */}
-        {!metaVatarMode && (
-          <div className="ui-row ui-gap-2">
-            <input id="docT" type="checkbox" checked={consent} onChange={toggleDocLevel} />
-            <label htmlFor="docT" className="ui-text-11 ui-text-weak">
-              Allow <b>redacted statement excerpts</b> for specific answers (off by default)
-            </label>
-          </div>
-        )}
+        <div className="ui-row ui-gap-2">
+          <input id="docT" type="checkbox" checked={consent} onChange={toggleDocLevel} />
+          <label htmlFor="docT" className="ui-text-11 ui-text-weak">
+            Allow <b>redacted statement excerpts</b> for specific answers (off by default)
+          </label>
+        </div>
 
-        {/* metaVatar mode - D-ID agent will be injected here */}
-        {metaVatarMode && (
-          <div
-            ref={avatarContainerRef}
-            style={{
-              width: '100%',
-              height: '100%',
-              minHeight: '600px',
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#1e293b',
-              borderRadius: '8px',
-              position: 'relative'
-            }}
-          >
-            <div style={{ color: '#94a3b8', fontSize: '14px' }}>Loading avatar...</div>
-          </div>
-        )}
+        {/* D-ID metaVatar script will inject a popup when activated */}
+        <div ref={avatarContainerRef} style={{ display: 'none' }}></div>
 
-        {/* Text chat mode - show chat history and input */}
-        {!metaVatarMode && (
-          <>
-            {/* Chat history */}
-            <ScrollArea maxHeight={360} className="ui-p-2 ui-ring ui-rounded">
-              <div className="ui-col ui-gap-2" ref={scrollRef}>
-                {chat.map((m,i)=>(
-                  <div key={i} className="ui-card ui-card-ring">
-                    <div className="ui-text-11 ui-text-weak">{m.role === "user" ? "You" : "MoneyPenny"} — {new Date(m.ts).toLocaleTimeString()}</div>
-                    <div className="ui-mt-2" style={{ whiteSpace: "pre-wrap" }}>{m.text}</div>
-                  </div>
-                ))}
+        {/* Chat history */}
+        <ScrollArea maxHeight={360} className="ui-p-2 ui-ring ui-rounded">
+          <div className="ui-col ui-gap-2" ref={scrollRef}>
+            {chat.map((m,i)=>(
+              <div key={i} className="ui-card ui-card-ring">
+                <div className="ui-text-11 ui-text-weak">{m.role === "user" ? "You" : "MoneyPenny"} — {new Date(m.ts).toLocaleTimeString()}</div>
+                <div className="ui-mt-2" style={{ whiteSpace: "pre-wrap" }}>{m.text}</div>
               </div>
-            </ScrollArea>
+            ))}
+          </div>
+        </ScrollArea>
 
-            {/* Composer */}
-            <div className="ui-row ui-gap-2">
-              <input className="ui-input" placeholder="Ask about Q¢ trading, HFT terms, or your performance…"
-                     value={input} onChange={(e)=>setInput(e.target.value)} onKeyDown={(e)=>{ if(e.key==="Enter") send(); }} />
-              <Button onClick={send}>Send</Button>
-            </div>
-          </>
-        )}
+        {/* Composer */}
+        <div className="ui-row ui-gap-2">
+          <input className="ui-input" placeholder="Ask about Q¢ trading, HFT terms, or your performance…"
+                 value={input} onChange={(e)=>setInput(e.target.value)} onKeyDown={(e)=>{ if(e.key==="Enter") send(); }} />
+          <Button onClick={send}>Send</Button>
+        </div>
 
         {/* Toggle button between text chat and metaVatar */}
         <Button onClick={toggleMetaVatar} variant="ghost" style={{ width: '100%', marginTop: '8px' }}>

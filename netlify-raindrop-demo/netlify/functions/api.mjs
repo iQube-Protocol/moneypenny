@@ -233,6 +233,50 @@ function handleTradingSessionSummary(query) {
   return { statusCode: 200, body: JSON.stringify(summary) };
 }
 
+// Propose Intent endpoint (mock)
+function handleProposeIntent(body) {
+  const { intent_id, tenant_id, details, limits } = body;
+
+  if (!intent_id || !tenant_id) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'intent_id and tenant_id required' }) };
+  }
+
+  if (!limits || !limits.min_edge_bps) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'limits required with min_edge_bps' }) };
+  }
+
+  // Mock fee and gas calculations
+  const feesBps = 2.0;
+  const gasUsd = 0.5;
+  const notional = details?.size?.notional || 100;
+  const gasBps = (gasUsd / notional) * 10000;
+  const floor = feesBps + gasBps + 0.5;
+
+  // Check if edge is above floor
+  if (limits.min_edge_bps < floor) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        error: 'edge_too_low',
+        floor_bps: parseFloat(floor.toFixed(4)),
+        fees_bps: parseFloat(feesBps.toFixed(4)),
+        gas_bps: parseFloat(gasBps.toFixed(4))
+      })
+    };
+  }
+
+  // Accept the intent
+  return {
+    statusCode: 202,
+    body: JSON.stringify({
+      accepted: true,
+      requires_human_confirm: false,
+      policy_floor_bps: parseFloat(floor.toFixed(4)),
+      forwarded: false
+    })
+  };
+}
+
 // Main handler
 export async function handler(event) {
   // Handle CORS
@@ -327,6 +371,11 @@ export async function handler(event) {
 
     if (path === '/trading/session-summary' && method === 'GET') {
       const result = handleTradingSessionSummary(query);
+      return { ...result, headers };
+    }
+
+    if (path === '/propose_intent' && method === 'POST') {
+      const result = handleProposeIntent(body);
       return { ...result, headers };
     }
 
