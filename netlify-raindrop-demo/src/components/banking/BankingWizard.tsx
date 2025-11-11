@@ -324,15 +324,44 @@ export default function BankingWizard() {
           {error && <div className="ui-text-11 ui-mb-2" style={{ color: "rgb(var(--error))" }}>{error}</div>}
 
           <div className="ui-row ui-gap-2" style={{ justifyContent: "flex-end" }}>
-            <Button
-              onClick={handleFileUpload}
-              disabled={!consent || uploadedFiles.length === 0 || busy}
-            >
-              {busy ? "Analyzing..." : "Upload & Analyze"}
-            </Button>
+            {uploadedFiles.length > 0 && (
+              <Button
+                onClick={handleFileUpload}
+                disabled={!consent || busy}
+              >
+                {busy ? "Analyzing..." : "Upload & Analyze"}
+              </Button>
+            )}
+            {files.length > 0 && uploadedFiles.length === 0 && (
+              <Button
+                onClick={async () => {
+                  if (!bucketId) return;
+                  setBusy(true);
+                  setError(undefined);
+                  try {
+                    const aggResp = await RDP.profile.computeAggregate(tenantId, personaDid, bucketId);
+                    if (aggResp && aggResp.aggregate) {
+                      setAgg(aggResp.aggregate);
+                      setRec(aggResp.aggregate?.proposed_overrides);
+                      setMonthCount(aggResp.monthCount || files.length);
+                      setCurrentStep(2);
+                    } else {
+                      setError("Failed to compute financial profile. Please try again.");
+                    }
+                  } catch (e: any) {
+                    setError(e.message || "compute failed");
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+                disabled={!consent || busy}
+              >
+                {busy ? "Computing..." : "Compute Profile →"}
+              </Button>
+            )}
             {agg && (
               <Button onClick={() => setCurrentStep(2)}>
-                Skip to Review →
+                Review Profile →
               </Button>
             )}
           </div>
