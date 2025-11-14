@@ -117,4 +117,11 @@ app.post(
 );
 
 const PORT = process.env.PORT || 8787;
-app.listen(PORT, () => console.log(`aa-api-gateway listening on port ${PORT}`));
+
+// For Vercel serverless
+export default app;
+
+// For local/traditional hosting
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`aa-api-gateway listening on port ${PORT}`));
+}

@@ -304,6 +304,13 @@ export async function handler(event) {
     } else if (path.startsWith('/api')) {
       path = path.slice('/api'.length);
     }
+    // Normalize leading/trailing slashes so route matching is stable
+    if (!path.startsWith('/')) {
+      path = '/' + path;
+    }
+    if (path.length > 1 && path.endsWith('/')) {
+      path = path.slice(0, -1);
+    }
     const method = event.httpMethod;
     const query = event.queryStringParameters || {};
     const body = event.body ? JSON.parse(event.body) : {};
