@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: aa-api-gateway
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 8787
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGIN
+        value: "*"

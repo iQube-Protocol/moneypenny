@@ -1,0 +1,16 @@
+version: 1
+backend:
+  phases:
+    build:
+      commands:
+        - npm ci
+        - npm run build
+frontend:
+  phases:
+    build:
+      commands:
+        - echo "No frontend build needed"
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
