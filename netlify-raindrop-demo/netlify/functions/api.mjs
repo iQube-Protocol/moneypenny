@@ -298,7 +298,12 @@ export async function handler(event) {
   };
 
   try {
-    const path = event.path.replace('/.netlify/functions/api', '');
+    let path = event.path || '';
+    if (path.startsWith('/.netlify/functions/api')) {
+      path = path.slice('/.netlify/functions/api'.length);
+    } else if (path.startsWith('/api')) {
+      path = path.slice('/api'.length);
+    }
     const method = event.httpMethod;
     const query = event.queryStringParameters || {};
     const body = event.body ? JSON.parse(event.body) : {};
