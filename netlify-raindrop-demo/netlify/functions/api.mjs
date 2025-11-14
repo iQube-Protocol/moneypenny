@@ -374,9 +374,46 @@ export async function handler(event) {
       return { ...result, headers };
     }
 
+    // Alias for RDP client path
+    if (path === '/rdp/mem/trading/summary' && method === 'GET') {
+      const result = handleTradingSessionSummary(query);
+      return { ...result, headers };
+    }
+
     if (path === '/propose_intent' && method === 'POST') {
       const result = handleProposeIntent(body);
       return { ...result, headers };
+    }
+
+    if (path === '/sim/stream' && method === 'GET') {
+      const now = new Date().toISOString();
+      const chains = (query.chains || 'ethereum').split(',');
+      const k = Math.min(10, Math.max(3, (chains.length || 1) * 3));
+      const messages = [];
+      for (let i = 0; i < k; i++) {
+        const chain = chains[i % chains.length] || 'ethereum';
+        const mid = 1 + Math.random() * 0.01;
+        const edge = +(Math.random() * 4 + 1).toFixed(2);
+        const msg = {
+          status: 'QUOTE',
+          chain,
+          symbol: 'QCT/USDC',
+          price: mid,
+          edge_bps: edge,
+          ts: now
+        };
+        messages.push(`data: ${JSON.stringify(msg)}\n\n`);
+      }
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': '*'
+        },
+        body: messages.join('')
+      };
     }
 
     // 404 for unknown endpoints
