@@ -4,3 +4,15 @@
 
 [functions]
   directory = "netlify/functions"
+
+[[redirects]]
+  from = "/moneypenny/console/:proxy*/mem/prefs"
+  to = "/.netlify/functions/api/rdp/mem/prefs"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/moneypenny/console/:proxy*/mem/:splat"
+  to = "/.netlify/functions/api/rdp/mem/:splat"
+  status = 200
+  force = true

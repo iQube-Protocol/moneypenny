@@ -225,7 +225,7 @@ function handleTradingSessionSummary(query) {
   const { tenant_id, persona_id } = query;
 
   const summary = {
-    capture_bps_24h: (Math.random() * 4 + 1).toFixed(2),
+    capture_bps_24h: +(Math.random() * 4 + 1).toFixed(2),
     fills_24h: Math.floor(Math.random() * 50 + 10),
     chains: ['Ethereum', 'Arbitrum', 'Base'].slice(0, Math.floor(Math.random() * 3) + 1)
   };
